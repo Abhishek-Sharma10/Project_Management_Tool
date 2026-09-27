@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config/env');
 const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api', limiter);
 // Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
 
 // 404 + centralized errors (must be last)
 app.use(notFoundHandler);
