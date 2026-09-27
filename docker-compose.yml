@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pmt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pmt
+      POSTGRES_PASSWORD: pmt_dev_password
+      POSTGRES_DB: project_management
+    ports:
+      - "5433:5432"
+    volumes:
+      - pmt_pg_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pmt -d project_management"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pmt_pg_data:
