@@ -1,6 +1,7 @@
 const express = require('express');
 const projectController = require('../controllers/projectController');
 const memberController = require('../controllers/memberController');
+const taskController = require('../controllers/taskController');
 const { authenticateUser } = require('../middleware/auth');
 
 const router = express.Router();
@@ -17,5 +18,8 @@ router.get('/:projectId/members', memberController.list);
 router.post('/:projectId/members', memberController.add);
 router.patch('/:projectId/members/:userId', memberController.updateRole);
 router.delete('/:projectId/members/:userId', memberController.remove);
+
+router.post('/:projectId/tasks', taskController.create);
+router.get('/:projectId/tasks', taskController.list);
 
 module.exports = router;
