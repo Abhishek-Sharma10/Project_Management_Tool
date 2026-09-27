@@ -2,6 +2,8 @@ const AppError = require('../utils/AppError');
 const projectRepository = require('../repositories/projectRepository');
 const memberRepository = require('../repositories/memberRepository');
 const userRepository = require('../repositories/userRepository');
+const { emitToProject } = require('../sockets/socketManager');
+const { notifyUser } = require('./notificationService');
 
 const VALID_ROLES = ['owner', 'admin', 'member'];
 const ASSIGNABLE_ROLES = ['admin', 'member'];
@@ -59,10 +61,6 @@ async function addMember(projectId, requesterId, { email, role = 'member' }) {
     throw new AppError('User with that email was not found', 404);
   }
 
-  if (user.id === requesterId) {
-    // Owner/admin already in project — adding self is a conflict
-  }
-
   const existing = await memberRepository.findMembership(projectId, user.id);
   if (existing) {
     throw new AppError('User is already a project member', 409);
@@ -82,7 +80,26 @@ async function addMember(projectId, requesterId, { email, role = 'member' }) {
   }
 
   const row = await memberRepository.findMemberWithUser(projectId, user.id);
-  return formatMember(row);
+  const member = formatMember(row);
+
+  // Broadcast real-time event
+  emitToProject(projectId, 'member:added', { member, projectId });
+
+  // Fetch project name for notification message
+  const project = await projectRepository.findById(projectId);
+  const projectName = project ? project.name : 'a project';
+
+  // Notify the added user
+  notifyUser({
+    userId: user.id,
+    type: 'project_added',
+    title: 'Added to project',
+    message: `You were added to "${projectName}" as a ${normalizedRole}.`,
+    entityType: 'project',
+    entityId: projectId,
+  });
+
+  return member;
 }
 
 async function updateMemberRole(projectId, targetUserId, requesterId, { role }) {
@@ -113,7 +130,11 @@ async function updateMemberRole(projectId, targetUserId, requesterId, { role }) 
 
   await memberRepository.updateMemberRole(projectId, targetUserId, role);
   const row = await memberRepository.findMemberWithUser(projectId, targetUserId);
-  return formatMember(row);
+  const member = formatMember(row);
+
+  emitToProject(projectId, 'member:updated', { member, projectId });
+
+  return member;
 }
 
 async function removeMember(projectId, targetUserId, requesterId) {
@@ -132,8 +153,13 @@ async function removeMember(projectId, targetUserId, requesterId) {
     throw new AppError('Only the owner can remove admins', 403);
   }
 
-  // Members cannot remove others — already blocked by assertProjectAdmin
   await memberRepository.removeMember(projectId, targetUserId);
+
+  emitToProject(projectId, 'member:removed', {
+    userId: targetUserId,
+    projectId,
+  });
+
   return { userId: targetUserId, removed: true };
 }
 

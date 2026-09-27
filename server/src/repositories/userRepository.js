@@ -38,9 +38,36 @@ async function emailExists(email) {
   return result.rows[0].email_taken;
 }
 
+async function updateUser(id, { name, avatarUrl }) {
+  const result = await query(
+    `UPDATE users
+     SET
+       name = COALESCE($2, name),
+       avatar_url = COALESCE($3, avatar_url)
+     WHERE id = $1
+     RETURNING id, name, email, avatar_url, created_at, updated_at`,
+    [id, name || null, avatarUrl || null]
+  );
+  return result.rows[0] || null;
+}
+
+async function updatePassword(id, passwordHash) {
+  const result = await query(
+    `UPDATE users
+     SET password_hash = $2
+     WHERE id = $1
+     RETURNING id`,
+    [id, passwordHash]
+  );
+  return result.rows[0] || null;
+}
+
 module.exports = {
   createUser,
   findByEmail,
   findById,
   emailExists,
+  updateUser,
+  updatePassword,
 };
+

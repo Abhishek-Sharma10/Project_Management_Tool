@@ -67,6 +67,22 @@ const changePosition = asyncHandler(async (req, res) => {
   return success(res, { task }, 'Task position updated');
 });
 
+const getMyTasks = asyncHandler(async (req, res) => {
+  const tasks = await taskService.listMyTasks(req.user.id, {
+    status: req.query.status,
+    priority: req.query.priority,
+    search: req.query.search,
+  });
+  return success(res, { tasks }, 'My tasks retrieved');
+});
+
+const getCalendarTasks = asyncHandler(async (req, res) => {
+  const tasks = await taskService.listCalendarTasks(req.user.id, {
+    projectId: req.query.projectId,
+  });
+  return success(res, { tasks }, 'Calendar tasks retrieved');
+});
+
 module.exports = {
   create,
   list,
@@ -76,4 +92,7 @@ module.exports = {
   assign,
   changeStatus,
   changePosition,
+  getMyTasks,
+  getCalendarTasks,
 };
+

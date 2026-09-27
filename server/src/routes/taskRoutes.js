@@ -7,6 +7,8 @@ const router = express.Router();
 
 router.use(authenticateUser);
 
+router.get('/my-tasks', taskController.getMyTasks);
+router.get('/calendar', taskController.getCalendarTasks);
 router.get('/:taskId', taskController.getOne);
 router.patch('/:taskId', taskController.update);
 router.delete('/:taskId', taskController.remove);

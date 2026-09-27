@@ -2,6 +2,8 @@ const AppError = require('../utils/AppError');
 const commentRepository = require('../repositories/commentRepository');
 const taskRepository = require('../repositories/taskRepository');
 const { assertProjectMember } = require('./memberService');
+const { emitToProject } = require('../sockets/socketManager');
+const { notifyUser } = require('./notificationService');
 
 function formatComment(row) {
   return {
@@ -39,7 +41,32 @@ async function createComment(taskId, userId, { content }) {
     userId,
     content: content.trim(),
   });
-  return formatComment(row);
+  const comment = formatComment(row);
+
+  // Real-time broadcast
+  emitToProject(task.project_id, 'comment:created', {
+    comment,
+    taskId,
+    projectId: task.project_id,
+  });
+
+  // If task has an assignee or creator different from commenter, send notification
+  const notifyTarget = (task.assigned_to && task.assigned_to !== userId)
+    ? task.assigned_to
+    : (task.created_by !== userId ? task.created_by : null);
+
+  if (notifyTarget) {
+    notifyUser({
+      userId: notifyTarget,
+      type: 'task_commented',
+      title: 'New comment',
+      message: `${comment.user?.name || 'A user'} commented on "${task.title}".`,
+      entityType: 'task',
+      entityId: taskId,
+    });
+  }
+
+  return comment;
 }
 
 async function listComments(taskId, userId) {
@@ -66,7 +93,15 @@ async function updateComment(commentId, userId, { content }) {
 
   validateContent(content);
   const row = await commentRepository.updateComment(commentId, content.trim());
-  return formatComment(row);
+  const comment = formatComment(row);
+
+  emitToProject(existing.project_id, 'comment:updated', {
+    comment,
+    taskId: existing.task_id,
+    projectId: existing.project_id,
+  });
+
+  return comment;
 }
 
 async function deleteComment(commentId, userId) {
@@ -81,6 +116,13 @@ async function deleteComment(commentId, userId) {
   }
 
   await commentRepository.deleteComment(commentId);
+
+  emitToProject(existing.project_id, 'comment:deleted', {
+    commentId,
+    taskId: existing.task_id,
+    projectId: existing.project_id,
+  });
+
   return { id: commentId, deleted: true, taskId: existing.task_id };
 }
 

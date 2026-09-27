@@ -128,10 +128,53 @@ async function getCurrentUser(userId) {
   return sanitizeUser(user);
 }
 
+async function updateProfile(userId, { name, avatarUrl }) {
+  if (name !== undefined) {
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      throw new AppError('Name cannot be empty', 400);
+    }
+  }
+
+  const updated = await userRepository.updateUser(userId, {
+    name: name ? name.trim() : undefined,
+    avatarUrl: avatarUrl !== undefined ? (avatarUrl?.trim() || null) : undefined,
+  });
+
+  return sanitizeUser(updated);
+}
+
+async function changePassword(userId, { currentPassword, newPassword }) {
+  if (!currentPassword || !newPassword) {
+    throw new AppError('Current password and new password are required', 400);
+  }
+
+  if (typeof newPassword !== 'string' || newPassword.length < 8) {
+    throw new AppError('New password must be at least 8 characters long', 400);
+  }
+
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  const match = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!match) {
+    throw new AppError('Incorrect current password', 401);
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  await userRepository.updatePassword(userId, passwordHash);
+
+  return { success: true };
+}
+
 module.exports = {
   register,
   login,
   refresh,
   logout,
   getCurrentUser,
+  updateProfile,
+  changePassword,
 };
+

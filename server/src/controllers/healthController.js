@@ -1,12 +1,34 @@
 const { healthCheck } = require('../config/db');
-const { success } = require('../utils/apiResponse');
 const { asyncHandler } = require('../middleware/errorHandler');
 
+/**
+ * GET /api/health
+ * Performs a real DB ping and reports connectivity status.
+ * Returns 200 if healthy, 503 if the database is unavailable.
+ */
 const getHealth = asyncHandler(async (req, res) => {
-  // Light DB ping so /api/health also confirms connectivity.
-  await healthCheck();
+  let dbStatus = 'connected';
+  let dbTime = null;
 
-  return success(res, null, 'API is running');
+  try {
+    const result = await healthCheck();
+    dbTime = result.now;
+  } catch (err) {
+    // Database is unreachable — surface the real status instead of faking it
+    return res.status(503).json({
+      success: false,
+      message: 'API is unhealthy',
+      database: 'disconnected',
+      error: err.message,
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'API is healthy',
+    database: dbStatus,
+    dbTime,
+  });
 });
 
 module.exports = {

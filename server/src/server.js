@@ -1,6 +1,8 @@
+const http = require('http');
 const app = require('./app');
 const config = require('./config/env');
 const { pool } = require('./config/db');
+const { initSocket } = require('./sockets/socketManager');
 
 async function start() {
   try {
@@ -8,8 +10,11 @@ async function start() {
     await pool.query('SELECT 1');
     console.log('Connected to PostgreSQL');
 
-    const server = app.listen(config.port, () => {
-      console.log(`API listening on http://localhost:${config.port}`);
+    const server = http.createServer(app);
+    initSocket(server);
+
+    server.listen(config.port, () => {
+      console.log(`API and Socket.io listening on http://localhost:${config.port}`);
       console.log(`Environment: ${config.env}`);
     });
 

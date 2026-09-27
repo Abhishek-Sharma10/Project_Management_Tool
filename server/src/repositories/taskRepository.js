@@ -191,11 +191,65 @@ async function getRawTask(taskId) {
   return result.rows[0] || null;
 }
 
+async function listMyTasks(userId, filters = {}) {
+  const { status, priority, search } = filters;
+  const result = await query(
+    `SELECT
+       ${TASK_SELECT},
+       p.name AS project_name
+     FROM tasks t
+     JOIN projects p ON p.id = t.project_id
+     JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $1
+     JOIN users creator ON creator.id = t.created_by
+     LEFT JOIN users assignee ON assignee.id = t.assigned_to
+     WHERE t.assigned_to = $1
+       AND ($2::task_status IS NULL OR t.status = $2::task_status)
+       AND ($3::task_priority IS NULL OR t.priority = $3::task_priority)
+       AND (
+         $4::TEXT IS NULL
+         OR t.title ILIKE '%' || $4 || '%'
+         OR COALESCE(t.description, '') ILIKE '%' || $4 || '%'
+       )
+     ORDER BY
+       CASE
+         WHEN t.due_date < CURRENT_DATE AND t.status <> 'done' THEN 1
+         WHEN t.due_date = CURRENT_DATE AND t.status <> 'done' THEN 2
+         WHEN t.status <> 'done' THEN 3
+         ELSE 4
+       END,
+       t.due_date ASC NULLS LAST,
+       t.created_at DESC`,
+    [userId, status || null, priority || null, search || null]
+  );
+  return result.rows;
+}
+
+async function listCalendarTasks(userId, { projectId = null } = {}) {
+  const result = await query(
+    `SELECT
+       ${TASK_SELECT},
+       p.name AS project_name
+     FROM tasks t
+     JOIN projects p ON p.id = t.project_id
+     JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $1
+     JOIN users creator ON creator.id = t.created_by
+     LEFT JOIN users assignee ON assignee.id = t.assigned_to
+     WHERE t.due_date IS NOT NULL
+       AND ($2::UUID IS NULL OR t.project_id = $2::UUID)
+     ORDER BY t.due_date ASC, t.priority DESC`,
+    [userId, projectId || null]
+  );
+  return result.rows;
+}
+
 module.exports = {
   createTask,
   listTasks,
+  listMyTasks,
+  listCalendarTasks,
   findById,
   updateTask,
   deleteTask,
   getRawTask,
 };
+
