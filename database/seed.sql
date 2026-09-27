@@ -18,28 +18,28 @@ INSERT INTO users (id, name, email, password_hash, avatar_url) VALUES
     '11111111-1111-1111-1111-111111111111',
     'Alice Owner',
     'alice@example.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$EU/qfx6Ium04swu.4mHc4OnmAa38vlLZ2Qdc95ItI6MGIbN/ewMJ2',
     NULL
   ),
   (
     '22222222-2222-2222-2222-222222222222',
     'Bob Admin',
     'bob@example.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$EU/qfx6Ium04swu.4mHc4OnmAa38vlLZ2Qdc95ItI6MGIbN/ewMJ2',
     NULL
   ),
   (
     '33333333-3333-3333-3333-333333333333',
     'Carol Member',
     'carol@example.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$EU/qfx6Ium04swu.4mHc4OnmAa38vlLZ2Qdc95ItI6MGIbN/ewMJ2',
     NULL
   ),
   (
     '44444444-4444-4444-4444-444444444444',
     'Dave Member',
     'dave@example.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$EU/qfx6Ium04swu.4mHc4OnmAa38vlLZ2Qdc95ItI6MGIbN/ewMJ2',
     NULL
   );
 
