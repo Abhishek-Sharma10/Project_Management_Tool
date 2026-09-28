@@ -13,8 +13,8 @@ async function start() {
     const server = http.createServer(app);
     initSocket(server);
 
-    server.listen(config.port, () => {
-      console.log(`API and Socket.io listening on http://localhost:${config.port}`);
+    server.listen(config.port, "0.0.0.0", () => {
+      console.log(`Project Management API and Socket.io listening on port ${config.port}`);
       console.log(`Environment: ${config.env}`);
     });
 
