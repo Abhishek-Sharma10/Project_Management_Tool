@@ -54,7 +54,7 @@ export default function LoginPage() {
 
   const handleQuickLogin = (demoEmail) => {
     setEmail(demoEmail);
-    setPassword('Password123!');
+    setPassword('PASSWORD123');
   };
 
   return (
